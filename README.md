@@ -78,7 +78,7 @@ Output is given as a TSV file with the following structure:
 
 |    Sample    |    Reads    |    Reads_HQ    |    SSU rRNA alignment rate (%)    |    LSU rRNA alignment rate (%)   |    Bacterial_Markers alignment rate (%)   |    total enrichmnet score
 |---|---|---|---|---|---|---|
-|    your_sample.fq	|	40000	|	39479	|	0.0075989767	|	0.022796930	|	0.0126649611	|	5.795329
+|    your_sample.fq	|	40000	|	39479	|	0.00759898	|	0.0227969	|	0.01266496	|	5.795329
 
 
 - An alignment score of 5.8 means that the virome is 5.8 times more enriched than a comparable metagenome
