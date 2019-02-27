@@ -131,24 +131,73 @@ def fancy_print(mesg,label,type,reline=False,newLine=False):
 	sys.stdout.flush()
 
 
+def check_install():
+	try:
+		#download indexes if you don't have it
+		to_download=[]
+		fancy_print("Checking Database Files",'...',bcolors.OKBLUE,reline=True)
 
-CHECKER_PATH=os.path.abspath(os.path.dirname(__file__))
+		if not os.path.isdir(INDEX_PATH):
+			os.mkdir(INDEX_PATH)
+
+		if not os.path.isfile(INDEX_PATH+'/SILVA_132_SSURef_Nr99_tax_silva.clean.1.bt2'):
+			to_download.append('https://bitbucket.org/CibioCM/viromeqc/downloads/SILVA_132_LSURef_tax_silva.clean.zip')
+
+		if not os.path.isfile(INDEX_PATH+'/SILVA_132_LSURef_tax_silva.clean.1.bt2'):
+			to_download.append('https://bitbucket.org/CibioCM/viromeqc/downloads/SILVA_132_SSURef_Nr99_tax_silva.clean_1.zip')
+			to_download.append('https://bitbucket.org/CibioCM/viromeqc/downloads/SILVA_132_SSURef_Nr99_tax_silva.clean_2.zip')
+			to_download.append('https://bitbucket.org/CibioCM/viromeqc/downloads/SILVA_132_SSURef_Nr99_tax_silva.clean_3.zip')
+	 
+		if not os.path.isfile(INDEX_PATH+'/amphora_bacteria.dmnd'):
+			to_download.append('https://bitbucket.org/CibioCM/viromeqc/downloads/amphora_bacteria.dmnd.zip')
+
+
+		fancy_print("Checking Database Files",'OK',bcolors.OKGREEN,reline=True,newLine=True)
+
+		if(to_download):
+			fancy_print("Need to download "+str(len(to_download))+' files','...',bcolors.OKBLUE,reline=True)
+			for downloadable in to_download:
+				download(downloadable, INDEX_PATH+'/tmp.zip')
+				zipDB = zipfile.ZipFile(INDEX_PATH+'/tmp.zip', 'r')
+				zipDB.extractall(INDEX_PATH)
+				zipDB.close()
+				os.remove(INDEX_PATH+'/tmp.zip')
+			fancy_print("Need to download "+str(len(to_download))+' files','DONE',bcolors.OKGREEN,reline=True,newLine=True)
+		 
+
+	except IOError: 
+		print("Failed to retrieve DB")
+		fancy_print("Failed to retrieve DB",'FAIL',bcolors.FAIL)
+		sys.exit(1)
+
+
+
+def no_fq_extension(string):
+	z=[]
+	for p in string.split('.'):
+		if any([q in p for q in ['bz2','fq','fastq','gz']]): continue
+		else: 
+			z.append(p)
+	
+	return '.'.join(z)
+
+
+CHECKER_PATH=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 INDEX_PATH=CHECKER_PATH+"/index/"
+LIMIT_OF_DETECTION = 1e-6
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
 		description='Checks a virome FASTQ file for enrichment efficiency')
 
-parser.add_argument("-i","--input", required=True, nargs="*", help="Raw Reads in FASTQ format. Supports multiple inputs (plain, gz o bz2)")
-parser.add_argument("-o",'--output',required=True, help="output file")
+parser.add_argument("-i","--input", required=all([x not in sys.argv for x in ['--install','--version']]), nargs="*", help="Raw Reads in FASTQ format. Supports multiple inputs (plain, gz o bz2)")
+parser.add_argument("-o",'--output',required=all([x not in sys.argv for x in ['--install','--version']]), help="output file")
 
 parser.add_argument("--minlen", help="Minimum Read Length allowed",default='75')
 parser.add_argument("--minqual", help="Minimum Read Average Phred quality",default='20')
-
-parser.add_argument("--version", help="Prints version informations", action='store_true')
 parser.add_argument("--bowtie2_threads", help="Number of Threads to use with Bowtie2",default='4') 
 parser.add_argument("--diamond_threads", help="Number of Threads to use with Diamond",default='4') 
 
-parser.add_argument("-w","--enrichment_preset", help="Calculate the enrichment basing on human or environmental metagenomes. Defualt: human-microbiome",default='human') 
+parser.add_argument("-w","--enrichment_preset", choices=['human','environmental'], help="Calculate the enrichment basing on human or environmental metagenomes. Defualt: human-microbiome",default='human') 
 
 parser.add_argument('--bowtie2_path', type=str, default='bowtie2',
         help="Full path to the bowtie2 command to use, deafult assumes "
@@ -157,23 +206,26 @@ parser.add_argument('--diamond_path', type=str, default='diamond',
         help="Full path to the diamond command to use, deafult assumes "
              "that 'diamond is present in the system path") 
 
+parser.add_argument("--version", help="Prints version informations", action='store_true')
+parser.add_argument("--install", help="Downloads database files", action='store_true')
+parser.add_argument("--sample_name", help="Optional label for the sample to be included in the output file")
+
 
 args=parser.parse_args()
 
 medians = pd.read_csv(CHECKER_PATH+'/medians.csv',sep='\t')
 
 if args.version: print_version()
-if args.enrichment_preset not in ['human','environmental']:
-	fancy_print('-w should be human or environmental, no other preset are supported','FAIL',bcolors.FAIL)
-	sys.exit(1)
-	
+if args.install:
+	check_install()
+	sys.exit(0)
 
 #pre-flight check
 for inputFile in args.input:
 	if not os.path.isfile(inputFile):
 		fancy_print("Error: file ",inputFile,'does not exist','ERROR',bcolors.FAIL)
 
-commands = [['zcat', '-h'],[args.bowtie2_path, '-h'],[args.diamond_path, 'help']]
+commands = [['zcat', '-h'],['bzcat', '-h'],[args.bowtie2_path, '-h'],[args.diamond_path, 'help']]
 
 
 for sw in commands:
@@ -184,44 +236,7 @@ for sw in commands:
 	except Exception as e:
 		fancy_print("Error, command not found: "+sw[0],'ERROR',bcolors.FAIL)
 
-try:
-	#download indexes if you don't have it
-	to_download=[]
-	fancy_print("Checking Database Files",'...',bcolors.OKBLUE,reline=True)
-
-	if not os.path.isdir(INDEX_PATH):
-		os.mkdir(INDEX_PATH)
-
-	if not os.path.isfile(INDEX_PATH+'/SILVA_132_SSURef_Nr99_tax_silva.clean.1.bt2'):
-		to_download.append('https://bitbucket.org/CibioCM/viromeqc/downloads/SILVA_132_LSURef_tax_silva.clean.zip')
-
-	if not os.path.isfile(INDEX_PATH+'/SILVA_132_LSURef_tax_silva.clean.1.bt2'):
-		to_download.append('https://bitbucket.org/CibioCM/viromeqc/downloads/SILVA_132_SSURef_Nr99_tax_silva.clean_1.zip')
-		to_download.append('https://bitbucket.org/CibioCM/viromeqc/downloads/SILVA_132_SSURef_Nr99_tax_silva.clean_2.zip')
-		to_download.append('https://bitbucket.org/CibioCM/viromeqc/downloads/SILVA_132_SSURef_Nr99_tax_silva.clean_3.zip')
- 
-	if not os.path.isfile(INDEX_PATH+'/amphora_bacteria.dmnd'):
-		to_download.append('https://bitbucket.org/CibioCM/viromeqc/downloads/amphora_bacteria.dmnd.zip')
-
-
-	fancy_print("Checking Database Files",'OK',bcolors.OKGREEN,reline=True,newLine=True)
-
-	if(to_download):
-		fancy_print("Need to download "+str(len(to_download))+' files','...',bcolors.OKBLUE,reline=True)
-		for downloadable in to_download:
-			download(downloadable, INDEX_PATH+'/tmp.zip')
-			zipDB = zipfile.ZipFile(INDEX_PATH+'/tmp.zip', 'r')
-			zipDB.extractall(INDEX_PATH)
-			zipDB.close()
-			os.remove(INDEX_PATH+'/tmp.zip')
-		fancy_print("Need to download "+str(len(to_download))+' files','DONE',bcolors.OKGREEN,reline=True,newLine=True)
-	 
-
-except IOError: 
-	print("Failed to retrieve DB")
-	fancy_print("Failed to retrieve DB",'FAIL',bcolors.FAIL)
-	sys.exit(1)
-
+check_install()
 
 tmpdir = tempfile.TemporaryDirectory()
 tmpdirname = tmpdir.name
@@ -240,17 +255,22 @@ if len(args.input) > 1:
 
 			subprocess.check_call([uncompression_cmd,infile],stdout=combinedFastq)
 
-	inputFile = tmpdirname+'/combined.fastq'
+	inputFile = tmpdirname+'/combined.fastq' 
+	workingName = args.sample_name if args.sample_name else ','.join([ no_fq_extension(os.path.basename(x)) for x in args.input])
 
 	fancy_print('Merging '+str(len(args.input))+' files','DONE',bcolors.OKGREEN,reline=True,newLine=True)
 else:
 	inputFile = args.input[0]
+	workingName = args.sample_name if args.sample_name else no_fq_extension(os.path.basename(inputFile))
 
-fileName = os.path.basename(inputFile).replace('.fastq','').replace('.fq','')
+
+
+fileName = no_fq_extension(os.path.basename(inputFile))
+
 
 fastq_len_cmd = [CHECKER_PATH+'/fastq_len_filter.py', '--min_len',args.minlen, '--min_qual',args.minqual,'--count',tmpdirname+'/'+fileName+'.nreads','-i',inputFile,'-o',tmpdirname+'/'+fileName+'.filter.fastq']
 try: 
-	fancy_print('[fastq_len_filter] | filtering HQ reads','...',bcolors.OKBLUE)
+	fancy_print('[fastq_len_filter] | filtering HQ reads','...',bcolors.OKBLUE,reline=True)
 
 	subprocess.check_call(fastq_len_cmd)
 
@@ -258,7 +278,9 @@ try:
 	with open(tmpdirname+'/'+fileName+'.nreads') as readCounts:
 		HQReads, totalReads = [line.strip().split('\t')[0:2] for line in readCounts][0]
 
-	fancy_print('[fastq_len_filter] | '+HQReads+' / '+totalReads+' ('+str(round(float(HQReads)/float(totalReads),2)*100)+'%) reads selected','DONE',bcolors.OKGREEN)
+	
+	filteredFile = tmpdirname+'/'+fileName+'.filter.fastq' 
+	fancy_print('[fastq_len_filter] | '+HQReads+' / '+totalReads+' ('+str(round(float(HQReads)/float(totalReads),2)*100)+'%) reads selected','DONE',bcolors.OKGREEN,reline=True,newLine=True)
 
 except Exception as e: 
 	fancy_print('Fatal error running fastq_len_filter. Error message: '+str(e),'FAIL',bcolors.FAIL)
@@ -267,10 +289,36 @@ except Exception as e:
 
 try: 
 	
-	filteredFile = tmpdirname+'/'+fileName+'.filter.fastq' 
+	fancy_print('[SILVA_SSU]   | Bowtie2 Aligning','...',bcolors.OKBLUE,reline=True)
 	
+	bt2_command = ['bowtie2','--quiet','-p',args.bowtie2_threads,'--very-sensitive-local','-x',INDEX_PATH+'/SILVA_132_SSURef_Nr99_tax_silva.clean','--no-unal','-U',filteredFile,'-S','-']
+	
+	p4 = subprocess.Popen(['wc','-l'], stdin=subprocess.PIPE,stdout=subprocess.PIPE)
+	p3 = subprocess.Popen(['samtools','view','-'], stdin=subprocess.PIPE,stdout=p4.stdin)
+	p2 = subprocess.Popen([CHECKER_PATH+'/cmseq/filter.py','--minlen','50','--minqual','20','--maxsnps','0.075'],stdin=subprocess.PIPE,stdout=p3.stdin)
+	p1 = subprocess.Popen(bt2_command, stdout=p2.stdin)
 
-	fancy_print('[SILVA_LSU] | Bowtie2 Aligning','...',bcolors.OKBLUE,reline=True)
+	p1.wait() 
+	p2.communicate()
+	p3.communicate()
+	
+	SSU_reads = int(p4.communicate()[0])
+	SSU_reads_rate = max(LIMIT_OF_DETECTION,float(SSU_reads)/float(HQReads)*100)
+	enrichment_SSU = min(100,float(medians.loc[medians['parameter']=='rRNA_SSU',args.enrichment_preset]) / float(SSU_reads_rate))
+
+	fancy_print('[SILVA_SSU]   | Bowtie2 Alignment rate: '+str(round(SSU_reads_rate,4))+'% (~'+str(round(enrichment_SSU,1))+'x)','DONE',bcolors.OKGREEN,reline=True,newLine=True)
+
+	if(SSU_reads_rate <= LIMIT_OF_DETECTION):
+		fancy_print('[SILVA_SSU]   | Value is below limit-of-detection ('+str(SSU_reads)+' SSU reads)','!!',bcolors.WARNING)
+
+except Exception as e: 
+	fancy_print('Fatal error running Bowtie2 on SSU rRNA. Error message: '+str(e),'FAIL',bcolors.FAIL)
+	sys.exit(1)
+
+
+try: 
+	 
+	fancy_print('[SILVA_LSU]   | Bowtie2 Aligning','...',bcolors.OKBLUE,reline=True)
 	
 	bt2_command = ['bowtie2','--quiet','-p',args.bowtie2_threads,'--very-sensitive-local','-x',INDEX_PATH+'/SILVA_132_LSURef_tax_silva.clean','--no-unal','-U',filteredFile,'-S','-']
 	#print("AAA")
@@ -284,82 +332,58 @@ try:
 	p2.communicate()
 	p3.communicate()
 	
-	LSU_READS = int(p4.communicate()[0])
-	LSU_READS_RATE = float(LSU_READS)/float(HQReads)*100
-	enrichment_LSU = min(100,float(medians.loc[medians['parameter']=='rRNA_LSU',args.enrichment_preset]) / float(LSU_READS_RATE))
+	LSU_reads = int(p4.communicate()[0]) 
+	LSU_reads_rate = max(LIMIT_OF_DETECTION,float(LSU_reads)/float(HQReads)*100)
+
+	enrichment_LSU = min(100,float(medians.loc[medians['parameter']=='rRNA_LSU',args.enrichment_preset]) / float(LSU_reads_rate))
+	
+	fancy_print('[SILVA_LSU]   | Bowtie2 Alignment rate: '+str(round(LSU_reads_rate,4))+'% (~'+str(round(enrichment_LSU,1))+'x)','DONE',bcolors.OKGREEN,reline=True,newLine=True)
 
 
-	fancy_print('[SILVA_LSU] | Bowtie2 Alignment rate: '+str(round(LSU_READS_RATE,4))+'% (~'+str(round(enrichment_LSU,1))+'x)','DONE',bcolors.OKGREEN,reline=True,newLine=True)
+	if(LSU_reads_rate <= LIMIT_OF_DETECTION):
+		fancy_print('[SILVA_LSU]   | Value is below limit-of-detection ('+str(LSU_reads)+' LSU reads)','!!',bcolors.WARNING)
+
+
 
 except Exception as e: 
 	fancy_print('Fatal error running Bowtie2 on LSU rRNA. Error message: '+str(e),'FAIL',bcolors.FAIL)
 	sys.exit(1)
 
 
-try: 
-	
-	filteredFile = tmpdirname+'/'+fileName+'.filter.fastq' 
-	
-
-	fancy_print('[SILVA_SSU] | Bowtie2 Aligning','...',bcolors.OKBLUE,reline=True)
-	
-	bt2_command = ['bowtie2','--quiet','-p',args.bowtie2_threads,'--very-sensitive-local','-x',INDEX_PATH+'/SILVA_132_SSURef_Nr99_tax_silva.clean','--no-unal','-U',filteredFile,'-S','-']
-	#print("AAA")
-	
-	p4 = subprocess.Popen(['wc','-l'], stdin=subprocess.PIPE,stdout=subprocess.PIPE)
-	p3 = subprocess.Popen(['samtools','view','-'], stdin=subprocess.PIPE,stdout=p4.stdin)
-	p2 = subprocess.Popen([CHECKER_PATH+'/cmseq/filter.py','--minlen','50','--minqual','20','--maxsnps','0.075'],stdin=subprocess.PIPE,stdout=p3.stdin)
-	p1 = subprocess.Popen(bt2_command, stdout=p2.stdin)
-
-	p1.wait() 
-	p2.communicate()
-	p3.communicate()
-	
-	SSU_READS = int(p4.communicate()[0])
-	SSU_READS_RATE = float(SSU_READS)/float(HQReads)*100
-	enrichment_SSU = min(100,float(medians.loc[medians['parameter']=='rRNA_SSU',args.enrichment_preset]) / float(SSU_READS_RATE))
-
-	fancy_print('[SILVA_SSU] | Bowtie2 Alignment rate: '+str(round(SSU_READS_RATE,4))+'% (~'+str(round(enrichment_SSU,1))+'x)','DONE',bcolors.OKGREEN,reline=True,newLine=True)
-
-except Exception as e: 
-	fancy_print('Fatal error running Bowtie2 on SSU rRNA. Error message: '+str(e),'FAIL',bcolors.FAIL)
-	sys.exit(1)
-
-
 try:
-	
-	filteredFile = tmpdirname+'/'+fileName+'.filter.fastq' 
-	
-	fancy_print('[AMPHORA]   | Diamond Aligning','...',bcolors.OKBLUE,reline=True)
+	 
+	fancy_print('[SC-Markers]  | Diamond Aligning','...',bcolors.OKBLUE,reline=True)
 	
 	diamond_command = ['diamond','blastx','-q',filteredFile,'--threads',args.diamond_threads,'--outfmt','6','--db',INDEX_PATH+'/amphora_bacteria.dmnd','--id','50','--max-hsps','35','-k','0']
-	#print("AAA")
-	 
-	cut_command='wc -l'.split(' ')
 	p2 = subprocess.Popen('cut -f1 | sort | uniq | wc -l',shell=True, stdin=subprocess.PIPE,stdout=subprocess.PIPE)
 	p1 = subprocess.Popen(diamond_command, stdout=p2.stdin)
 
-	AMPHORA_READS = int(p2.communicate()[0])
-	AMPHORA_READS_RATE = float(AMPHORA_READS)/float(HQReads)*100
-	enrichment_AMPHORA = min(100,float(medians.loc[medians['parameter']=='AMPHORA2',args.enrichment_preset]) / float(AMPHORA_READS_RATE))
+	singleCopyMarkers_reads = int(p2.communicate()[0])
+	singleCopyMarkers_reads_rate = max(LIMIT_OF_DETECTION,float(singleCopyMarkers_reads)/float(HQReads)*100)
 
-	fancy_print('[AMPHORA]   | Diamond Alignment rate: '+str(round(AMPHORA_READS_RATE,4))+'% (~'+str(round(enrichment_AMPHORA,1))+'x)','DONE',bcolors.OKGREEN,reline=True,newLine=True)
+	enrichment_singleCopyMarkers = min(100,float(medians.loc[medians['parameter']=='AMPHORA2',args.enrichment_preset]) / float(singleCopyMarkers_reads_rate))
+
+	fancy_print('[SC-Markers]  | Diamond Alignment rate: '+str(round(singleCopyMarkers_reads_rate,4))+'% (~'+str(round(enrichment_singleCopyMarkers,1))+'x)','DONE',bcolors.OKGREEN,reline=True,newLine=True)
+
+	if(singleCopyMarkers_reads <= LIMIT_OF_DETECTION):
+		fancy_print('[SC-Markers]  | Value is below to limit-of-detection ('+str(singleCopyMarkers_reads)+' reads)','!!',bcolors.WARNING)
 
 except Exception as e: 
 	fancy_print('Fatal error running Diamond on Single-Copy-Proteins. Error message: '+str(e),'FAIL',bcolors.FAIL)
 	sys.exit(1)
 
-
- 
-OVERALL_ENRICHM_RATE = min(enrichment_SSU,enrichment_LSU,enrichment_AMPHORA)
-to_out=[fileName,totalReads,HQReads,SSU_READS_RATE,LSU_READS_RATE,AMPHORA_READS_RATE,OVERALL_ENRICHM_RATE]
-
-
-fancy_print('Finished: overall enrichment score is ~'+str(round(OVERALL_ENRICHM_RATE,1))+'x','END',bcolors.OKGREEN,reline=True,newLine=True)
+overallEnrichmenScore = min(enrichment_SSU,enrichment_LSU,enrichment_singleCopyMarkers)
+to_out=[workingName,totalReads,HQReads,SSU_reads_rate,LSU_reads_rate,singleCopyMarkers_reads_rate,overallEnrichmenScore]
 
 
 outFile = open(args.output,'w')
-outFile.write("Sample\tReads\tReads_HQ\tSSU rRNA alignment rate\tLSU rRNA alignment rate\tAmphora2_bacterial_markers alignment rate\ttotal enrichmnet score\n")
+outFile.write("Sample\tReads\tReads_HQ\tSSU rRNA alignment rate\tLSU rRNA alignment rate\tBacterial_Markers alignment rate\ttotal enrichmnet score\n")
 outFile.write('\t'.join([str(x) for x in to_out])+'\n')
 outFile.close()
+
+fancy_print('Finished','',bcolors.ENDC)
+fancy_print('              | Overall Enrichment Score: ~'+str(round(overallEnrichmenScore,1))+'x','.',bcolors.ENDC)
+fancy_print('              | Output File: '+args.output,'.',bcolors.ENDC)
+fancy_print('Have a nice day! ','DONE',bcolors.OKGREEN)
+
 tmpdir.cleanup()
