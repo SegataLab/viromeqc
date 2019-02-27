@@ -41,7 +41,7 @@ You can pass more than one file as input (e.g. for multiple runs or paired end r
 Parameters:
 
 ```
-usage: viromeQC.py
+usage: viromeQC.py -i <input_virome_file> -o <report_file.txt>
 
 optional arguments:
   -h, --help            show this help message and exit
