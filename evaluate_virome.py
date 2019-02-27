@@ -286,7 +286,10 @@ try:
 	
 	LSU_READS = int(p4.communicate()[0])
 	LSU_READS_RATE = float(LSU_READS)/float(HQReads)*100
-	fancy_print('[SILVA_LSU] | Bowtie2 Alignment rate: '+str(round(LSU_READS_RATE,4))+'%','DONE',bcolors.OKGREEN,reline=True,newLine=True)
+	enrichment_LSU = min(100,float(medians.loc[medians['parameter']=='rRNA_LSU',args.enrichment_preset]) / float(LSU_READS_RATE))
+
+
+	fancy_print('[SILVA_LSU] | Bowtie2 Alignment rate: '+str(round(LSU_READS_RATE,4))+'% (~'+str(round(enrichment_LSU,1))+'x)','DONE',bcolors.OKGREEN,reline=True,newLine=True)
 
 except Exception as e: 
 	fancy_print('Fatal error running Bowtie2 on LSU rRNA. Error message: '+str(e),'FAIL',bcolors.FAIL)
@@ -314,7 +317,9 @@ try:
 	
 	SSU_READS = int(p4.communicate()[0])
 	SSU_READS_RATE = float(SSU_READS)/float(HQReads)*100
-	fancy_print('[SILVA_SSU] | Bowtie2 Alignment rate: '+str(round(SSU_READS_RATE,4))+'%','DONE',bcolors.OKGREEN,reline=True,newLine=True)
+	enrichment_SSU = min(100,float(medians.loc[medians['parameter']=='rRNA_SSU',args.enrichment_preset]) / float(SSU_READS_RATE))
+
+	fancy_print('[SILVA_SSU] | Bowtie2 Alignment rate: '+str(round(SSU_READS_RATE,4))+'% (~'+str(round(enrichment_SSU,1))+'x)','DONE',bcolors.OKGREEN,reline=True,newLine=True)
 
 except Exception as e: 
 	fancy_print('Fatal error running Bowtie2 on SSU rRNA. Error message: '+str(e),'FAIL',bcolors.FAIL)
@@ -336,24 +341,21 @@ try:
 
 	AMPHORA_READS = int(p2.communicate()[0])
 	AMPHORA_READS_RATE = float(AMPHORA_READS)/float(HQReads)*100
+	enrichment_AMPHORA = min(100,float(medians.loc[medians['parameter']=='AMPHORA2',args.enrichment_preset]) / float(AMPHORA_READS_RATE))
 
-	fancy_print('[AMPHORA]   | Diamond Alignment rate: '+str(round(AMPHORA_READS_RATE,4))+'%','DONE',bcolors.OKGREEN,reline=True,newLine=True)
+	fancy_print('[AMPHORA]   | Diamond Alignment rate: '+str(round(AMPHORA_READS_RATE,4))+'% (~'+str(round(enrichment_AMPHORA,1))+'x)','DONE',bcolors.OKGREEN,reline=True,newLine=True)
 
 except Exception as e: 
 	fancy_print('Fatal error running Diamond on Single-Copy-Proteins. Error message: '+str(e),'FAIL',bcolors.FAIL)
 	sys.exit(1)
 
 
-
-enrichment_SSU = float(medians.loc[medians['parameter']=='rRNA_SSU',args.enrichment_preset]) / float(SSU_READS_RATE)
-enrichment_LSU = float(medians.loc[medians['parameter']=='rRNA_LSU',args.enrichment_preset]) / float(LSU_READS_RATE)
-enrichment_AMPHORA = float(medians.loc[medians['parameter']=='AMPHORA2',args.enrichment_preset]) / float(AMPHORA_READS_RATE)
-
+ 
 OVERALL_ENRICHM_RATE = min(enrichment_SSU,enrichment_LSU,enrichment_AMPHORA)
 to_out=[fileName,totalReads,HQReads,SSU_READS_RATE,LSU_READS_RATE,AMPHORA_READS_RATE,OVERALL_ENRICHM_RATE]
 
 
-fancy_print('[AMPHORA]   | Diamond Alignment rate: '+str(round(AMPHORA_READS_RATE,4))+'%','DONE',bcolors.OKGREEN,reline=True,newLine=True)
+fancy_print('Finished: overall enrichment score is ~'+str(round(OVERALL_ENRICHM_RATE,1))+'x','END',bcolors.OKGREEN,reline=True,newLine=True)
 
 
 outFile = open(args.output,'w')
