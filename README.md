@@ -1,6 +1,5 @@
 # ViromeQC #
  
- 
 ## Description ##
 
 ViromeQC:
@@ -30,11 +29,11 @@ or download the repository from the **[download](https://bitbucket.org/CibioCM/v
 
 This steps downloads the database files from BitBucket. It needs to be done only the first time you run ViromeQC. This may require a few minutes.
 
-Run: `evaluate_virome.py --install`
+Run: `viromeQC.py --install`
 
 ###Step 3: Run on your sample ###
 
-Run: `evaluate_virome.py -i <input_virome_file(s)> -o <report_file.txt>`
+Run: `viromeQC.py -i <input_virome_file(s)> -o <report_file.txt>`
 
 *Please Note:* 
 You can pass more than one file as input (e.g. for multiple runs or paired end reads). However, note that you can process only one sample at a time with this command. If you want to parallelize the execution, this can be easily done with [Parallel](https://www.gnu.org/software/parallel/) or equivalent tools.
@@ -42,7 +41,7 @@ You can pass more than one file as input (e.g. for multiple runs or paired end r
 Parameters:
 
 ```
-usage: evaluate_virome.py
+usage: viromeQC.py
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -95,7 +94,7 @@ Output is given as a TSV file with the following structure:
 
 |    Sample    |    Reads    |    Reads_HQ    |    SSU rRNA alignment (%)    |    LSU rRNA alignment (%)   |    Bacterial_Markers alignment (%)   |    total enrichmnet score
 |---|---|---|---|---|---|---|
-|    your_sample.fq	|	40000	|	39479	|	0.00759898	|	0.0227969	|	0.01266496	|	5.795329
+|    your_sample.fq | 40000 | 39479 | 0.00759898  | 0.0227969 | 0.01266496  | 5.795329
 
 
 - An alignment score of 5.8 means that the virome is 5.8 times more enriched than a comparable metagenome
