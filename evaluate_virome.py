@@ -6,6 +6,8 @@ import zipfile
 import time
 import tempfile
 import subprocess
+import pandas as pd
+
 
 try:
 	from Bio import SeqIO
@@ -136,7 +138,7 @@ INDEX_PATH=CHECKER_PATH+"/index/"
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
 		description='Checks a virome FASTQ file for enrichment efficiency')
 
-parser.add_argument("-i","--input", required=True, nargs="*", help="Raw Reads in FASTQ format")
+parser.add_argument("-i","--input", required=True, nargs="*", help="Raw Reads in FASTQ format. Supports multiple inputs (plain, gz o bz2)")
 parser.add_argument("-o",'--output',required=True, help="output file")
 
 parser.add_argument("--minlen", help="Minimum Read Length allowed",default='75')
@@ -158,6 +160,7 @@ parser.add_argument('--diamond_path', type=str, default='diamond',
 
 args=parser.parse_args()
 
+medians = pd.read_csv(CHECKER_PATH+'/medians.csv',sep='\t')
 
 if args.version: print_version()
 if args.enrichment_preset not in ['human','environmental']:
@@ -169,6 +172,17 @@ if args.enrichment_preset not in ['human','environmental']:
 for inputFile in args.input:
 	if not os.path.isfile(inputFile):
 		fancy_print("Error: file ",inputFile,'does not exist','ERROR',bcolors.FAIL)
+
+commands = [['zcat', '-h'],[args.bowtie2_path, '-h'],[args.diamond_path, 'help']]
+
+
+for sw in commands:
+	try: 
+		with open(os.devnull, 'w') as devnull:
+			subprocess.check_call(sw, stdout=devnull, stderr=devnull)
+
+	except Exception as e:
+		fancy_print("Error, command not found: "+sw[0],'ERROR',bcolors.FAIL)
 
 try:
 	#download indexes if you don't have it
@@ -217,8 +231,15 @@ if len(args.input) > 1:
 	with open(tmpdirname+'/combined.fastq','a') as combinedFastq:
 		for infile in args.input:
 			#print(['cat',infile,'>>',tmpdirname+'/combined.fastq'])
-			subprocess.check_call(['cat',infile],stdout=combinedFastq)
-	
+			if infile.endswith('.gz'):
+				uncompression_cmd = 'zcat'
+			elif infile.endswith('.bz2'):
+				uncompression_cmd = 'bzcat'
+			else:
+				uncompression_cmd = 'cat'
+
+			subprocess.check_call([uncompression_cmd,infile],stdout=combinedFastq)
+
 	inputFile = tmpdirname+'/combined.fastq'
 
 	fancy_print('Merging '+str(len(args.input))+' files','DONE',bcolors.OKGREEN,reline=True,newLine=True)
@@ -256,7 +277,7 @@ try:
 	
 	p4 = subprocess.Popen(['wc','-l'], stdin=subprocess.PIPE,stdout=subprocess.PIPE)
 	p3 = subprocess.Popen(['samtools','view','-'], stdin=subprocess.PIPE,stdout=p4.stdin)
-	p2 = subprocess.Popen(['/shares/CIBIO-Storage/CM/scratch/repos/cmseq/filter.py','--minlen','50','--minqual','20','--maxsnps','0.075'],stdin=subprocess.PIPE,stdout=p3.stdin)
+	p2 = subprocess.Popen([CHECKER_PATH+'/cmseq/filter.py','--minlen','50','--minqual','20','--maxsnps','0.075'],stdin=subprocess.PIPE,stdout=p3.stdin)
 	p1 = subprocess.Popen(bt2_command, stdout=p2.stdin)
 
 	p1.wait() 
@@ -284,7 +305,7 @@ try:
 	
 	p4 = subprocess.Popen(['wc','-l'], stdin=subprocess.PIPE,stdout=subprocess.PIPE)
 	p3 = subprocess.Popen(['samtools','view','-'], stdin=subprocess.PIPE,stdout=p4.stdin)
-	p2 = subprocess.Popen(['/shares/CIBIO-Storage/CM/scratch/repos/cmseq/filter.py','--minlen','50','--minqual','20','--maxsnps','0.075'],stdin=subprocess.PIPE,stdout=p3.stdin)
+	p2 = subprocess.Popen([CHECKER_PATH+'/cmseq/filter.py','--minlen','50','--minqual','20','--maxsnps','0.075'],stdin=subprocess.PIPE,stdout=p3.stdin)
 	p1 = subprocess.Popen(bt2_command, stdout=p2.stdin)
 
 	p1.wait() 
@@ -322,15 +343,18 @@ except Exception as e:
 	fancy_print('Fatal error running Diamond on Single-Copy-Proteins. Error message: '+str(e),'FAIL',bcolors.FAIL)
 	sys.exit(1)
 
-import pandas as pd
-medians = pd.read_csv(CHECKER_PATH+'/medians.csv',sep='\t')
 
 
 enrichment_SSU = float(medians.loc[medians['parameter']=='rRNA_SSU',args.enrichment_preset]) / float(SSU_READS_RATE)
 enrichment_LSU = float(medians.loc[medians['parameter']=='rRNA_LSU',args.enrichment_preset]) / float(LSU_READS_RATE)
 enrichment_AMPHORA = float(medians.loc[medians['parameter']=='AMPHORA2',args.enrichment_preset]) / float(AMPHORA_READS_RATE)
 
-to_out=[fileName,totalReads,HQReads,SSU_READS_RATE,LSU_READS_RATE,AMPHORA_READS_RATE,min(enrichment_SSU,enrichment_LSU,enrichment_AMPHORA)]
+OVERALL_ENRICHM_RATE = min(enrichment_SSU,enrichment_LSU,enrichment_AMPHORA)
+to_out=[fileName,totalReads,HQReads,SSU_READS_RATE,LSU_READS_RATE,AMPHORA_READS_RATE,OVERALL_ENRICHM_RATE]
+
+
+fancy_print('[AMPHORA]   | Diamond Alignment rate: '+str(round(AMPHORA_READS_RATE,4))+'%','DONE',bcolors.OKGREEN,reline=True,newLine=True)
+
 
 outFile = open(args.output,'w')
 outFile.write("Sample\tReads\tReads_HQ\tSSU rRNA alignment rate\tLSU rRNA alignment rate\tAmphora2_bacterial_markers alignment rate\ttotal enrichmnet score\n")
