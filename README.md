@@ -70,7 +70,11 @@ optional arguments:
                         (default: diamond)
   --version             Prints version informations (default: False)
   --install             Downloads database files (default: False)
-
+  --sample_name SAMPLE_NAME
+                        Optional label for the sample to be included in the
+                        output file (default: None)
+  --tempdir TEMPDIR     Temporary Directory override (default is the system
+                        temp. directory) (default: None)
 ```
 
 ### Pipeline structure ###

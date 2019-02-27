@@ -209,6 +209,7 @@ parser.add_argument('--diamond_path', type=str, default='diamond',
 parser.add_argument("--version", help="Prints version informations", action='store_true')
 parser.add_argument("--install", help="Downloads database files", action='store_true')
 parser.add_argument("--sample_name", help="Optional label for the sample to be included in the output file")
+parser.add_argument("--tempdir", help="Temporary Directory override (default is the system temp directory)")
 
 
 args=parser.parse_args()
@@ -238,8 +239,16 @@ for sw in commands:
 
 check_install()
 
-tmpdir = tempfile.TemporaryDirectory()
-tmpdirname = tmpdir.name
+
+if args.tempdir: 
+	tempfile.tempdir=args.tempdir
+
+try:
+	tmpdir = tempfile.TemporaryDirectory()
+	tmpdirname = tmpdir.name
+except Exception as e:
+	fancy_print("Could not create temp folder in "+tempfile.tempdir,'FAIL',bcolors.FAIL)
+	sys.exit(1)
 
 if len(args.input) > 1:
 	fancy_print('Merging '+str(len(args.input))+' files','...',bcolors.OKBLUE,reline=True)
