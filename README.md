@@ -62,11 +62,11 @@ optional arguments:
                         (default: human)
   --bowtie2_path BOWTIE2_PATH
                         Full path to the bowtie2 command to use, deafult
-                        assumes that 'bowtie2 is present in the system path
+                        assumes that bowtie2 is present in the system path
                         (default: bowtie2)
   --diamond_path DIAMOND_PATH
                         Full path to the diamond command to use, deafult
-                        assumes that 'diamond is present in the system path
+                        assumes that diamond is present in the system path
                         (default: diamond)
   --version             Prints version informations (default: False)
   --install             Downloads database files (default: False)
