@@ -28,7 +28,7 @@ or download the repository from the **[download](https://bitbucket.org/CibioCM/v
 
 ###Step 2: install the database:###
 
-This steps downloads the database files from BitBucket. It needs to be done only the first time you run ViromeQC. This may require a few minutes.
+This steps downloads the database files from BitBucket. It needs to be done only the first time you run ViromeQC. This may require a few minutes, depending on your internet connection.
 
 Run: `viromeQC.py --install`
 
@@ -38,6 +38,8 @@ Run: `viromeQC.py -i <input_virome_file(s)> -o <report_file.txt>`
 
 *Please Note:* 
 You can pass more than one file as input (e.g. for multiple runs or paired end reads). However, note that you can process only one sample at a time with this command. If you want to parallelize the execution, this can be easily done with [Parallel](https://www.gnu.org/software/parallel/) or equivalent tools.
+
+You can try the test example (`test/test.sh`) which analyzes 10'000 reads from the sample SRR829034. This should take approximately 1 or 2 minutes.
 
 Parameters:
 
