@@ -363,7 +363,7 @@ try:
 	 
 	fancy_print('[SC-Markers]  | Diamond Aligning','...',bcolors.OKBLUE,reline=True)
 	
-	diamond_command = ['diamond','blastx','-q',filteredFile,'--threads',args.diamond_threads,'--outfmt','6','--db',INDEX_PATH+'/amphora_bacteria.dmnd','--id','50','--max-hsps','35','-k','0']
+	diamond_command = [args.diamond_path,'blastx','-q',filteredFile,'--threads',args.diamond_threads,'--outfmt','6','--db',INDEX_PATH+'/amphora_bacteria.dmnd','--id','50','--max-hsps','35','-k','0']
 	p2 = subprocess.Popen('cut -f1 | sort | uniq | wc -l',shell=True, stdin=subprocess.PIPE,stdout=subprocess.PIPE)
 	p1 = subprocess.Popen(diamond_command, stdout=p2.stdin)
 
