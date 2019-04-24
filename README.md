@@ -6,7 +6,7 @@ ViromeQC:
 
 * Provides an enrichment score for VLP viromes with respect to metagenomes
 * Useful benchmark for the quality of enrichment of a virome
-
+* Tested on Linux Ubuntu Server 16.04 LTS and on Linux Mint 19
 
 **Requires:**
 
