@@ -247,7 +247,7 @@ try:
 	tmpdir = tempfile.TemporaryDirectory()
 	tmpdirname = tmpdir.name
 except Exception as e:
-	fancy_print("Could not create temp folder in "+tempfile.tempdir,'FAIL',bcolors.FAIL)
+	fancy_print("Could not create temp folder in "+str(tempfile.tempdir),'FAIL',bcolors.FAIL)
 	sys.exit(1)
 
 if len(args.input) > 1:
