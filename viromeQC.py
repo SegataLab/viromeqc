@@ -131,7 +131,9 @@ def fancy_print(mesg,label,type,reline=False,newLine=False):
 	sys.stdout.flush()
 
 
-def check_install():
+def check_install(req_dmd_db_filename):
+ 
+  
 	try:
 		#download indexes if you don't have it
 		to_download=[]
@@ -148,8 +150,8 @@ def check_install():
 			to_download.append('https://bitbucket.org/CibioCM/viromeqc/downloads/SILVA_132_SSURef_Nr99_tax_silva.clean_2.zip')
 			to_download.append('https://bitbucket.org/CibioCM/viromeqc/downloads/SILVA_132_SSURef_Nr99_tax_silva.clean_3.zip')
 	 
-		if not os.path.isfile(INDEX_PATH+'/amphora_bacteria.dmnd'):
-			to_download.append('https://bitbucket.org/CibioCM/viromeqc/downloads/amphora_bacteria.dmnd.zip')
+		if not os.path.isfile(INDEX_PATH+'/'+req_dmd_db_filename):
+			to_download.append('https://bitbucket.org/CibioCM/viromeqc/downloads/'+req_dmd_db_filename+'.zip')
 
 
 		fancy_print("Checking Database Files",'OK',bcolors.OKGREEN,reline=True,newLine=True)
@@ -207,6 +209,8 @@ parser.add_argument('--diamond_path', type=str, default='diamond',
              "that 'diamond is present in the system path") 
 
 parser.add_argument("--version", help="Prints version informations", action='store_true')
+parser.add_argument("--debug", help="Prints error messages in case of debug", action='store_true')
+
 parser.add_argument("--install", help="Downloads database files", action='store_true')
 parser.add_argument("--sample_name", help="Optional label for the sample to be included in the output file")
 parser.add_argument("--tempdir", help="Temporary Directory override (default is the system temp directory)")
@@ -216,9 +220,31 @@ args=parser.parse_args()
 
 medians = pd.read_csv(CHECKER_PATH+'/medians.csv',sep='\t')
 
+
+try:
+	diamond_command = [args.diamond_path,'--version']
+		
+	with open(os.devnull) as devnull:
+		ps1 = subprocess.Popen(diamond_command, stdout=subprocess.PIPE,stderr=devnull)
+
+	dmd_version = str(ps1.communicate()[0].strip()).strip("'").split(' ')[-1]
+
+	dmd_v_split = dmd_version.split('.')
+	
+	if int(dmd_v_split[1]) == 9 and int(dmd_v_split[2]) < 19:
+		req_dmd_db_filename='amphora_bacteria.dmnd'
+	else:
+		req_dmd_db_filename='amphora_bacteria_294.dmnd'
+except:
+	fancy_print("Failed to detect diamond version",'FAIL',bcolors.FAIL)
+	sys.exit(1)
+
 if args.version: print_version()
+
+
+
 if args.install:
-	check_install()
+	check_install(req_dmd_db_filename)
 	sys.exit(0)
 
 #pre-flight check
@@ -237,7 +263,7 @@ for sw in commands:
 	except Exception as e:
 		fancy_print("Error, command not found: "+sw[0],'ERROR',bcolors.FAIL)
 
-check_install()
+check_install(req_dmd_db_filename)
 
 
 if args.tempdir: 
@@ -363,9 +389,17 @@ try:
 	 
 	fancy_print('[SC-Markers]  | Diamond Aligning','...',bcolors.OKBLUE,reline=True)
 	
-	diamond_command = [args.diamond_path,'blastx','-q',filteredFile,'--threads',args.diamond_threads,'--outfmt','6','--db',INDEX_PATH+'/amphora_bacteria.dmnd','--id','50','--max-hsps','35','-k','0']
+	diamond_command = [args.diamond_path,'blastx','-q',filteredFile,'--threads',args.diamond_threads,'--outfmt','6','--db',INDEX_PATH+'/'+req_dmd_db_filename,'--id','50','--max-hsps','35','-k','0','--quiet']
 	p2 = subprocess.Popen('cut -f1 | sort | uniq | wc -l',shell=True, stdin=subprocess.PIPE,stdout=subprocess.PIPE)
-	p1 = subprocess.Popen(diamond_command, stdout=p2.stdin)
+	
+	if args.debug:
+		p1 = subprocess.Popen(diamond_command, stdout=p2.stdin)
+	else:
+		if args.debug:
+			p1 = subprocess.Popen(diamond_command, stdout=p2.stdin)
+		else:
+			with open(os.devnull) as devnull:
+				p1 = subprocess.Popen(diamond_command, stdout=p2.stdin,stderr=devnull)
 
 	singleCopyMarkers_reads = int(p2.communicate()[0])
 	singleCopyMarkers_reads_rate = max(LIMIT_OF_DETECTION,float(singleCopyMarkers_reads)/float(HQReads)*100)
