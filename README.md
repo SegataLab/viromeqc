@@ -14,7 +14,7 @@ ViromeQC:
 * [Samtools](http://samtools.sourceforge.net/) >= 1.3.1
 * [Biopython](https://github.com/biopython/biopython) >= 1.69
 * [Pysam](http://pysam.readthedocs.io/en/latest/) >= 0.14
-* [Diamond](http://github.com/bbuchfink/diamond) (tested on v.0.9.29)
+* [iamond](http://github.com/bbuchfink/diamond) (tested on v.0.9.9 and 0.9.29)
 * Python3 (tested on 3.6)
 * [pandas](https://pandas.pydata.org) >= 0.20
 
