@@ -8,6 +8,7 @@ ViromeQC:
 * Useful benchmark for the quality of enrichment of a virome
 * Tested on Linux Ubuntu Server 16.04 LTS and on Linux Mint 19
 
+
 **Requires:**
 
 * [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml) >= v. 2.3.4
@@ -18,21 +19,24 @@ ViromeQC:
 * Python3 (tested on 3.6)
 * [pandas](https://pandas.pydata.org) >= 0.20
 
+**Update:** _ViromeQC_ now works with newer versions of diamond (e.g. v0.9.29) 
+Thanks to Ryan Cook ([@RyanCookAMR](https://twitter.com/RyanCookAMR)) for the new diamond db
+
 ## Usage ##
 
-###Step 1: clone or download the repository###
+### Step 1: clone or download the repository###
 
 Run: `hg clone https://bitbucket.org/CibioCM/viromeqc`
 
 or download the repository from the **[download](https://bitbucket.org/CibioCM/viromeqc/downloads/])** page
 
-###Step 2: install the database:###
+### Step 2: install the database:###
 
 This steps downloads the database files from BitBucket. It needs to be done only the first time you run ViromeQC. This may require a few minutes, depending on your internet connection.
 
 Run: `viromeQC.py --install`
 
-###Step 3: Run on your sample ###
+### Step 3: Run on your sample ###
 
 Run: `viromeQC.py -i <input_virome_file(s)> -o <report_file.txt>`
 
