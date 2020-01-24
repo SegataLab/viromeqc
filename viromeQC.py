@@ -196,6 +196,10 @@ parser.add_argument("-o",'--output',required=all([x not in sys.argv for x in ['-
 
 parser.add_argument("--minlen", help="Minimum Read Length allowed",default='75')
 parser.add_argument("--minqual", help="Minimum Read Average Phred quality",default='20')
+
+parser.add_argument("--minlen_SSU", help="Minimum alignment length when considering SSU rRNA gene",default='50')
+parser.add_argument("--minlen_LSU", help="Minimum alignment length when considering LSU rRNA gene",default='50')
+
 parser.add_argument("--bowtie2_threads", help="Number of Threads to use with Bowtie2",default='4') 
 parser.add_argument("--diamond_threads", help="Number of Threads to use with Diamond",default='4') 
 
@@ -326,11 +330,12 @@ try:
 	
 	fancy_print('[SILVA_SSU]   | Bowtie2 Aligning','...',bcolors.OKBLUE,reline=True)
 	
+
 	bt2_command = ['bowtie2','--quiet','-p',args.bowtie2_threads,'--very-sensitive-local','-x',INDEX_PATH+'/SILVA_132_SSURef_Nr99_tax_silva.clean','--no-unal','-U',filteredFile,'-S','-']
-	
+	if args.debug: print(' '.join(bt2_command))
 	p4 = subprocess.Popen(['wc','-l'], stdin=subprocess.PIPE,stdout=subprocess.PIPE)
 	p3 = subprocess.Popen(['samtools','view','-'], stdin=subprocess.PIPE,stdout=p4.stdin)
-	p2 = subprocess.Popen([CHECKER_PATH+'/cmseq/filter.py','--minlen','50','--minqual','20','--maxsnps','0.075'],stdin=subprocess.PIPE,stdout=p3.stdin)
+	p2 = subprocess.Popen([CHECKER_PATH+'/cmseq/filter.py','--minlen',args.minlen_SSU,'--minqual','20','--maxsnps','0.075'],stdin=subprocess.PIPE,stdout=p3.stdin)
 	p1 = subprocess.Popen(bt2_command, stdout=p2.stdin)
 
 	p1.wait() 
@@ -356,11 +361,12 @@ try:
 	fancy_print('[SILVA_LSU]   | Bowtie2 Aligning','...',bcolors.OKBLUE,reline=True)
 	
 	bt2_command = ['bowtie2','--quiet','-p',args.bowtie2_threads,'--very-sensitive-local','-x',INDEX_PATH+'/SILVA_132_LSURef_tax_silva.clean','--no-unal','-U',filteredFile,'-S','-']
+	if args.debug: print(' '.join(bt2_command))
 	#print("AAA")
 	
 	p4 = subprocess.Popen(['wc','-l'], stdin=subprocess.PIPE,stdout=subprocess.PIPE)
 	p3 = subprocess.Popen(['samtools','view','-'], stdin=subprocess.PIPE,stdout=p4.stdin)
-	p2 = subprocess.Popen([CHECKER_PATH+'/cmseq/filter.py','--minlen','50','--minqual','20','--maxsnps','0.075'],stdin=subprocess.PIPE,stdout=p3.stdin)
+	p2 = subprocess.Popen([CHECKER_PATH+'/cmseq/filter.py','--minlen',args.minlen_LSU,'--minqual','20','--maxsnps','0.075'],stdin=subprocess.PIPE,stdout=p3.stdin)
 	p1 = subprocess.Popen(bt2_command, stdout=p2.stdin)
 
 	p1.wait() 
