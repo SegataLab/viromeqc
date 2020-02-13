@@ -1,13 +1,10 @@
 # ViromeQC #
  
 ## Description ##
-
-ViromeQC:
-
+ 
 * Provides an enrichment score for VLP viromes with respect to metagenomes
 * Useful benchmark for the quality of enrichment of a virome
 * Tested on Linux Ubuntu Server 16.04 LTS and on Linux Mint 19
-
 
 **Requires:**
 
@@ -26,24 +23,24 @@ Thanks to Ryan Cook ([@RyanCookAMR](https://twitter.com/RyanCookAMR)) for the ne
 
 ### Step 1: clone or download the repository ###
 
-Run: `git clone --recurse-submodules https://github.com/SegataLab/viromeqc.git`
+`git clone --recurse-submodules https://github.com/SegataLab/viromeqc.git`
 
 or download the repository from the **[releases](https://github.com/SegataLab/viromeqc/releases/])** page
 
 ### Step 2: install the database: ###
 
-This steps downloads the database files from BitBucket. It needs to be done only the first time you run ViromeQC. This may require a few minutes, depending on your internet connection.
+This steps downloads the database file. This needs to be done only the first time you run ViromeQC. This may require a few minutes, depending on your internet connection.
 
-Run: `viromeQC.py --install`
+`viromeQC.py --install`
 
 ### Step 3: Run on your sample ###
 
-Run: `viromeQC.py -i <input_virome_file(s)> -o <report_file.txt>`
+`viromeQC.py -i <input_virome_file(s)> -o <report_file.txt>`
 
 *Please Note:* 
-You can pass more than one file as input (e.g. for multiple runs or paired end reads). However, note that you can process only one sample at a time with this command. If you want to parallelize the execution, this can be easily done with [Parallel](https://www.gnu.org/software/parallel/) or equivalent tools.
+You can pass more than one file as input (e.g. for multiple runs or paired end reads). However, you can process only one sample at a time with this command. If you want to parallelize the execution, this can be easily done with [Parallel](https://www.gnu.org/software/parallel/) or equivalent tools.
 
-You can try the test example (`test/test.sh`) which analyzes 10'000 reads from the sample SRR829034. This should take approximately 1 or 2 minutes.
+You can try the test example (`test/test.sh`) which analyzes 10'000 reads from the sample `SRR829034`. This should take approximately 1 or 2 minutes.
 
 Parameters:
 
@@ -86,10 +83,10 @@ optional arguments:
 
 ### Pipeline structure ###
 
-ViromeQC requires FASTQ files (compressed files are supported), and will:
+ViromeQC starts from FASTQ files (compressed files are supported), and will:
 
 1. Elimitate short and low quality reads
-    - *adjust the `minqual` and `minlen` parameters if you want to change thresholds*
+    - *adjust the `minqual` and `minlen` parameters if you want to change the thresholds*
 2. Map the reads against a curated collection of rRNAs and single-copy bacteral markers
 3. Filter the reads to remove short and dlsivergent alignments
 4. Compute the enrichment value of the sample, compared to the median observed in human metagenomes
