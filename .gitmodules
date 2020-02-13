@@ -1,0 +1,3 @@
+[submodule "cmseq"]
+	path = cmseq
+	url = https://github.com/SegataLab/cmseq.git

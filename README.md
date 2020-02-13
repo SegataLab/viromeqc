@@ -24,13 +24,13 @@ Thanks to Ryan Cook ([@RyanCookAMR](https://twitter.com/RyanCookAMR)) for the ne
 
 ## Usage ##
 
-### Step 1: clone or download the repository###
+### Step 1: clone or download the repository ###
 
-Run: `hg clone https://bitbucket.org/CibioCM/viromeqc`
+Run: `git clone --recurse-submodules https://github.com/SegataLab/viromeqc.git`
 
-or download the repository from the **[download](https://bitbucket.org/CibioCM/viromeqc/downloads/])** page
+or download the repository from the **[releases](https://github.com/SegataLab/viromeqc/releases/])** page
 
-### Step 2: install the database:###
+### Step 2: install the database: ###
 
 This steps downloads the database files from BitBucket. It needs to be done only the first time you run ViromeQC. This may require a few minutes, depending on your internet connection.
 
