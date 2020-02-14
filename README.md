@@ -19,6 +19,10 @@
 **Update:** _ViromeQC_ now works with newer versions of diamond (e.g. v0.9.29) 
 Thanks to Ryan Cook ([@RyanCookAMR](https://twitter.com/RyanCookAMR)) for the new diamond db
 
+**Citation**
+
+*Zolfo, M., Pinto, F., Asnicar, F., Manghi, P., Tett A., Segata N.* - [Detecting contamination in viromes using ViromeQC](https://www.nature.com/articles/s41587-019-0334-5), Nature Biotechnology 37, 1408–1412 (2019)
+
 ## Usage ##
 
 ### Step 1: clone or download the repository ###
