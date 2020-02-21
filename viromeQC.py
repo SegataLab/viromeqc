@@ -142,23 +142,27 @@ def check_install(req_dmd_db_filename):
 		if not os.path.isdir(INDEX_PATH):
 			os.mkdir(INDEX_PATH)
 
-		if not os.path.isfile(INDEX_PATH+'/SILVA_132_SSURef_Nr99_tax_silva.clean.1.bt2'):
-			to_download.append('https://bitbucket.org/CibioCM/viromeqc/downloads/SILVA_132_LSURef_tax_silva.clean.zip')
-
 		if not os.path.isfile(INDEX_PATH+'/SILVA_132_LSURef_tax_silva.clean.1.bt2'):
-			to_download.append('https://bitbucket.org/CibioCM/viromeqc/downloads/SILVA_132_SSURef_Nr99_tax_silva.clean_1.zip')
-			to_download.append('https://bitbucket.org/CibioCM/viromeqc/downloads/SILVA_132_SSURef_Nr99_tax_silva.clean_2.zip')
-			to_download.append('https://bitbucket.org/CibioCM/viromeqc/downloads/SILVA_132_SSURef_Nr99_tax_silva.clean_3.zip')
+			to_download.append('https://www.dropbox.com/s/c0nbhkw0ww3lm97/SILVA_132_LSURef_tax_silva.clean.zip?dl=1')
+
+		if not os.path.isfile(INDEX_PATH+'/SILVA_132_SSURef_Nr99_tax_silva.clean.1.bt2'):
+			to_download.append('https://www.dropbox.com/s/mb5a0g7utmcupje/SILVA_132_SSURef_Nr99_tax_silva.clean_1.zip?dl=1')
+			to_download.append('https://www.dropbox.com/s/qqqokke8r26e8ve/SILVA_132_SSURef_Nr99_tax_silva.clean_2.zip?dl=1')
+			to_download.append('https://www.dropbox.com/s/idmbwbavqalse9q/SILVA_132_SSURef_Nr99_tax_silva.clean_3.zip?dl=1')	
 	 
 		if not os.path.isfile(INDEX_PATH+'/'+req_dmd_db_filename):
-			to_download.append('https://bitbucket.org/CibioCM/viromeqc/downloads/'+req_dmd_db_filename+'.zip')
-
+			if req_dmd_db_filename == 'amphora_bacteria.dmnd':
+				to_download.append('https://www.dropbox.com/s/rfer26hdoj3nsm0/amphora_bacteria.dmnd.zip?dl=1')
+			
+			elif req_dmd_db_filename == 'amphora_bacteria_294.dmnd':
+				to_download.append('https://www.dropbox.com/s/43nu0l6zkiw2las/amphora_bacteria_294.dmnd.zip?dl=1') 
 
 		fancy_print("Checking Database Files",'OK',bcolors.OKGREEN,reline=True,newLine=True)
 
 		if(to_download):
 			fancy_print("Need to download "+str(len(to_download))+' files','...',bcolors.OKBLUE,reline=True)
 			for downloadable in to_download:
+
 				download(downloadable, INDEX_PATH+'/tmp.zip')
 				zipDB = zipfile.ZipFile(INDEX_PATH+'/tmp.zip', 'r')
 				zipDB.extractall(INDEX_PATH)
