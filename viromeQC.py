@@ -9,14 +9,7 @@ import subprocess
 import pandas as pd
 
 
-try:
-	from Bio import SeqIO
-	from Bio.Seq import Seq
-	from Bio.SeqRecord import SeqRecord
-	from Bio.Alphabet import IUPAC
-except ImportError as e:
-	metamlst_print("Failed in importing Biopython. Please check Biopython is installed properly on your system!",'FAIL',bcolors.FAIL)
-	sys.exit(1)
+
 
 __author__ = 'Moreno Zolfo (moreno.zolfo@unitn.it)'
 __version__ = '1.0'
@@ -187,6 +180,23 @@ def no_fq_extension(string):
 	
 	return '.'.join(z)
 
+	
+
+try:
+	from Bio import SeqIO
+	from Bio.Seq import Seq
+	from Bio.SeqRecord import SeqRecord
+	from Bio.Alphabet import IUPAC
+except ImportError as e:
+	fancy_print("Failed in importing Biopython. Please check Biopython is installed properly on your system!",'FAIL',bcolors.FAIL)
+	sys.exit(1)
+
+try:
+	import pysam
+except ImportError as e:
+	fancy_print("Failed in importing pysam. Please check pysam is installed properly on your system!",'FAIL',bcolors.FAIL)
+	sys.exit(1)
+
 
 CHECKER_PATH=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 INDEX_PATH=CHECKER_PATH+"/index/"
@@ -208,6 +218,7 @@ parser.add_argument("--bowtie2_threads", help="Number of Threads to use with Bow
 parser.add_argument("--diamond_threads", help="Number of Threads to use with Diamond",default='4') 
 
 parser.add_argument("-w","--enrichment_preset", choices=['human','environmental'], help="Calculate the enrichment basing on human or environmental metagenomes. Defualt: human-microbiome",default='human') 
+parser.add_argument('--medians', type=str, default=CHECKER_PATH+'/medians.csv', help="File containing reference medians to calculate the enrichment. Default is medians.csv in the script directory. You can specify a different file with this parameter.") 
 
 parser.add_argument('--bowtie2_path', type=str, default='bowtie2',
         help="Full path to the bowtie2 command to use, deafult assumes "
@@ -215,6 +226,8 @@ parser.add_argument('--bowtie2_path', type=str, default='bowtie2',
 parser.add_argument('--diamond_path', type=str, default='diamond',
         help="Full path to the diamond command to use, deafult assumes "
              "that 'diamond is present in the system path") 
+
+
 
 parser.add_argument("--version", help="Prints version informations", action='store_true')
 parser.add_argument("--debug", help="Prints error messages in case of debug", action='store_true')
@@ -226,8 +239,7 @@ parser.add_argument("--tempdir", help="Temporary Directory override (default is 
 
 args=parser.parse_args()
 
-medians = pd.read_csv(CHECKER_PATH+'/medians.csv',sep='\t')
-
+medians = pd.read_csv(args.medians,sep='\t')
 
 try:
 	diamond_command = [args.diamond_path,'--version']
@@ -339,7 +351,7 @@ try:
 	if args.debug: print(' '.join(bt2_command))
 	p4 = subprocess.Popen(['wc','-l'], stdin=subprocess.PIPE,stdout=subprocess.PIPE)
 	p3 = subprocess.Popen(['samtools','view','-'], stdin=subprocess.PIPE,stdout=p4.stdin)
-	p2 = subprocess.Popen([CHECKER_PATH+'/cmseq/filter.py','--minlen',args.minlen_SSU,'--minqual','20','--maxsnps','0.075'],stdin=subprocess.PIPE,stdout=p3.stdin)
+	p2 = subprocess.Popen([CHECKER_PATH+'/cmseq/cmseq/filter.py','--minlen',args.minlen_SSU,'--minqual','20','--maxsnps','0.075'],stdin=subprocess.PIPE,stdout=p3.stdin)
 	p1 = subprocess.Popen(bt2_command, stdout=p2.stdin)
 
 	p1.wait() 
@@ -370,7 +382,7 @@ try:
 	
 	p4 = subprocess.Popen(['wc','-l'], stdin=subprocess.PIPE,stdout=subprocess.PIPE)
 	p3 = subprocess.Popen(['samtools','view','-'], stdin=subprocess.PIPE,stdout=p4.stdin)
-	p2 = subprocess.Popen([CHECKER_PATH+'/cmseq/filter.py','--minlen',args.minlen_LSU,'--minqual','20','--maxsnps','0.075'],stdin=subprocess.PIPE,stdout=p3.stdin)
+	p2 = subprocess.Popen([CHECKER_PATH+'/cmseq/cmseq/filter.py','--minlen',args.minlen_LSU,'--minqual','20','--maxsnps','0.075'],stdin=subprocess.PIPE,stdout=p3.stdin)
 	p1 = subprocess.Popen(bt2_command, stdout=p2.stdin)
 
 	p1.wait() 
