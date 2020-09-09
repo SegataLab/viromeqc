@@ -12,8 +12,8 @@ import pandas as pd
 
 
 __author__ = 'Moreno Zolfo (moreno.zolfo@unitn.it)'
-__version__ = '1.0'
-__date__ = '1 Feb 2019'
+__version__ = '1.0.1'
+__date__ = '5 September 2020'
 
 
 
