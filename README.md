@@ -25,13 +25,15 @@ Thanks to Ryan Cook ([@RyanCookAMR](https://twitter.com/RyanCookAMR)) for the ne
 
 `git clone --recurse-submodules https://github.com/SegataLab/viromeqc.git`
 
-or download the repository from the **[releases](https://github.com/SegataLab/viromeqc/releases/])** page
+or download the repository from the **[releases](https://github.com/SegataLab/viromeqc/releases)** page
 
 ### Step 2: install the database: ###
 
 This steps downloads the database file. This needs to be done only the first time you run ViromeQC. This may require a few minutes, depending on your internet connection.
 
 `viromeQC.py --install`
+
+Alternatively, you can also download the database files from [Zenodo](https://zenodo.org/record/4020594#.X1jxgGMzZDM). Once downloaded the files, create a folder named `index/` in the ViromeQC installation folder and unzip all the files in this folder.
 
 ### Step 3: Run on your sample ###
 
