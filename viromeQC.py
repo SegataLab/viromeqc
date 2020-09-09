@@ -186,7 +186,6 @@ try:
 	from Bio import SeqIO
 	from Bio.Seq import Seq
 	from Bio.SeqRecord import SeqRecord
-	from Bio.Alphabet import IUPAC
 except ImportError as e:
 	fancy_print("Failed in importing Biopython. Please check Biopython is installed properly on your system!",'FAIL',bcolors.FAIL)
 	sys.exit(1)
