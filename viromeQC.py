@@ -12,8 +12,8 @@ import pandas as pd
 
 
 __author__ = 'Moreno Zolfo (moreno.zolfo@unitn.it)'
-__version__ = '1.0.1'
-__date__ = '5 September 2020'
+__version__ = '1.0.2'
+__date__ = '15 Nov. 2022'
 
 
 
@@ -124,7 +124,7 @@ def fancy_print(mesg,label,type,reline=False,newLine=False):
 	sys.stdout.flush()
 
 
-def check_install(req_dmd_db_filename):
+def check_install(req_dmd_db_filename,source):
  
   
 	try:
@@ -135,25 +135,44 @@ def check_install(req_dmd_db_filename):
 		if not os.path.isdir(INDEX_PATH):
 			os.mkdir(INDEX_PATH)
 
-		if not os.path.isfile(INDEX_PATH+'/SILVA_132_LSURef_tax_silva.clean.1.bt2'):
-			to_download.append('https://www.dropbox.com/s/c0nbhkw0ww3lm97/SILVA_132_LSURef_tax_silva.clean.zip?dl=1')
 
-		if not os.path.isfile(INDEX_PATH+'/SILVA_132_SSURef_Nr99_tax_silva.clean.1.bt2'):
-			to_download.append('https://www.dropbox.com/s/mb5a0g7utmcupje/SILVA_132_SSURef_Nr99_tax_silva.clean_1.zip?dl=1')
-			to_download.append('https://www.dropbox.com/s/qqqokke8r26e8ve/SILVA_132_SSURef_Nr99_tax_silva.clean_2.zip?dl=1')
-			to_download.append('https://www.dropbox.com/s/idmbwbavqalse9q/SILVA_132_SSURef_Nr99_tax_silva.clean_3.zip?dl=1')	
-	 
-		if not os.path.isfile(INDEX_PATH+'/'+req_dmd_db_filename):
-			if req_dmd_db_filename == 'amphora_bacteria.dmnd':
-				to_download.append('https://www.dropbox.com/s/rfer26hdoj3nsm0/amphora_bacteria.dmnd.zip?dl=1')
-			
-			elif req_dmd_db_filename == 'amphora_bacteria_294.dmnd':
-				to_download.append('https://www.dropbox.com/s/43nu0l6zkiw2las/amphora_bacteria_294.dmnd.zip?dl=1') 
+		remote_links = {
+		'dropbox': { \
+			'silva_LSU_clean' : ['https://www.dropbox.com/s/c0nbhkw0ww3lm97/SILVA_132_LSURef_tax_silva.clean.zip?dl=1'], \
+		 	'silva_SSU_clean':  [
+		 						'https://www.dropbox.com/s/mb5a0g7utmcupje/SILVA_132_SSURef_Nr99_tax_silva.clean_1.zip?dl=1', \
+		 						'https://www.dropbox.com/s/qqqokke8r26e8ve/SILVA_132_SSURef_Nr99_tax_silva.clean_2.zip?dl=1', \
+		 						'https://www.dropbox.com/s/idmbwbavqalse9q/SILVA_132_SSURef_Nr99_tax_silva.clean_3.zip?dl=1'
+		 						],
+		 	'amph_dmd': [
+		 				'https://www.dropbox.com/s/rfer26hdoj3nsm0/amphora_bacteria.dmnd.zip?dl=1', \
+		 				'https://www.dropbox.com/s/43nu0l6zkiw2las/amphora_bacteria_294.dmnd.zip?dl=1'
+		 				]
+				   },
+		'zenodo': { \
+					'silva_LSU_clean' : ['https://zenodo.org/record/4020594/files/SILVA_132_LSURef_tax_silva_clean.zip?download=1'], \
+				 	'silva_SSU_clean':  ['https://zenodo.org/record/4020594/files/SILVA_132_SSURef_Nr99_tax_silva.clean.zip?download=1'],
+				 	'amph_dmd': ['https://zenodo.org/record/4020594/files/amphora_markers.zip?download=1']
+				   },
+		}
+
+		if source in remote_links:
+			if not os.path.isfile(INDEX_PATH+'/SILVA_132_LSURef_tax_silva.clean.1.bt2'):
+				to_download.append(remote_links[source]['silva_LSU_clean'])
+
+			if not os.path.isfile(INDEX_PATH+'/SILVA_132_SSURef_Nr99_tax_silva.clean.1.bt2'):
+				to_download.append(remote_links[source]['silva_SSU_clean'])
+		 
+			if not os.path.isfile(INDEX_PATH+'/'+req_dmd_db_filename):
+				to_download.append(remote_links[source]['amph_dmd'])
 
 		fancy_print("Checking Database Files",'OK',bcolors.OKGREEN,reline=True,newLine=True)
 
+
 		if(to_download):
-			fancy_print("Need to download "+str(len(to_download))+' files','...',bcolors.OKBLUE,reline=True)
+			to_download = [_ for grp in to_download for _ in grp]
+			fancy_print("Using {} as download source for ViromeQC db".format(source),'...',bcolors.OKBLUE,newLine=True)
+			fancy_print("Need to download {} files".format(len(to_download)),'...',bcolors.OKBLUE,reline=True)
 			for downloadable in to_download:
 
 				download(downloadable, INDEX_PATH+'/tmp.zip')
@@ -161,7 +180,7 @@ def check_install(req_dmd_db_filename):
 				zipDB.extractall(INDEX_PATH)
 				zipDB.close()
 				os.remove(INDEX_PATH+'/tmp.zip')
-			fancy_print("Need to download "+str(len(to_download))+' files','DONE',bcolors.OKGREEN,reline=True,newLine=True)
+			fancy_print("Uncompressing DB ({} files)".format(len(to_download)),'DONE',bcolors.OKGREEN,reline=True,newLine=True)
 		 
 
 	except IOError: 
@@ -232,6 +251,7 @@ parser.add_argument("--version", help="Prints version informations", action='sto
 parser.add_argument("--debug", help="Prints error messages in case of debug", action='store_true')
 
 parser.add_argument("--install", help="Downloads database files", action='store_true')
+parser.add_argument("--zenodo", help="Use Zenodo instead of Dropbox to download the DB", action='store_true')
 parser.add_argument("--sample_name", help="Optional label for the sample to be included in the output file")
 parser.add_argument("--tempdir", help="Temporary Directory override (default is the system temp directory)")
 
@@ -239,6 +259,7 @@ parser.add_argument("--tempdir", help="Temporary Directory override (default is 
 args=parser.parse_args()
 
 medians = pd.read_csv(args.medians,sep='\t')
+dwl_source = 'zenodo' if args.zenodo else 'dropbox'
 
 try:
 	diamond_command = [args.diamond_path,'--version']
@@ -263,7 +284,7 @@ if args.version: print_version()
 
 
 if args.install:
-	check_install(req_dmd_db_filename)
+	check_install(req_dmd_db_filename, source=dwl_source)
 	sys.exit(0)
 
 #pre-flight check
@@ -282,7 +303,7 @@ for sw in commands:
 	except Exception as e:
 		fancy_print("Error, command not found: "+sw[0],'ERROR',bcolors.FAIL)
 
-check_install(req_dmd_db_filename)
+check_install(req_dmd_db_filename,source=dwl_source)
 
 
 if args.tempdir: 
